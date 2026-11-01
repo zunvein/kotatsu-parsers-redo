@@ -183,7 +183,7 @@ internal abstract class LikeMangaParser(
 		val doc = Jsoup.parse(raw, "https://$domain/")
 
 		val encrypted = extractJsonVar(raw, "InitMangaEncryptedChapter")
-		val ciphertext = encrypted?.optString("ciphertext")?.nullIfEmpty()
+		val ciphertext = encrypted?.optString("ciphertext")?.takeIf { it.isNotEmpty() }
 		if (encrypted == null || ciphertext == null) {
 			return parseDirectPages(doc)
 		}
@@ -195,7 +195,7 @@ internal abstract class LikeMangaParser(
 		if (cid == 0 || iv.isEmpty()) {
 			return parseDirectPages(doc)
 		}
-		val nonce = extractJsonVar(raw, "InitMangaData")?.optString("nonce")?.nullIfEmpty()
+		val nonce = extractJsonVar(raw, "InitMangaData")?.optString("nonce")?.takeIf { it.isNotEmpty() }
 		val key = requestChapterKey(cid, epoch, grant, nonce, url)
 		val decrypted = cryptoAes.decrypt(ciphertext, key.hexToBytes(), iv.hexToBytes())
 		return Jsoup.parseBodyFragment(decrypted, "https://$domain/")
@@ -293,7 +293,7 @@ internal abstract class LikeMangaParser(
 				continue
 			}
 			val title = panel.selectFirst("h2, h3, h4")?.textOrNull()
-				?: panel.selectFirst("img[alt]")?.attr("alt")?.removePrefix("Cover image of ")?.trim().nullIfEmpty()
+				?: panel.selectFirst("img[alt]")?.attr("alt")?.removePrefix("Cover image of ")?.trim()?.takeIf { it.isNotEmpty() }
 				?: continue
 			result.add(
 				Manga(
